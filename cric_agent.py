@@ -470,7 +470,6 @@ if __name__ == "__main__":
     # "llama-3.3-70b-versatile"   ← best quality, recommended
     # "llama-3.1-8b-instant"      ← fastest, lower quality
     # "gemma2-9b-it"              ← lightweight option
-    GROQ_API_KEY = "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"
-    CRICKET_ANALYST_OBJ = CricketAnalyst(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile")
+    # CRICKET_ANALYST_OBJ = CricketAnalyst(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile")
     
-    asyncio.run(main())
+    # asyncio.run(main())
