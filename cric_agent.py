@@ -462,14 +462,3 @@ async def main():
         await mode_league()
     elif args.mode == "multi":
         await mode_multi(args.match_ids)
-
-
-if __name__ == "__main__":
-    
-    # Good fast Groq models to choose from:
-    # "llama-3.3-70b-versatile"   ← best quality, recommended
-    # "llama-3.1-8b-instant"      ← fastest, lower quality
-    # "gemma2-9b-it"              ← lightweight option
-    # CRICKET_ANALYST_OBJ = CricketAnalyst(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile")
-    
-    # asyncio.run(main())

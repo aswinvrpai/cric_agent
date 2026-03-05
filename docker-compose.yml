@@ -1,7 +1,7 @@
 
 services:
   app:
-    image: cric-agent:latest        # overridden in production by docker pull
+    image: 471112696784.dkr.ecr.us-east-1.amazonaws.com/cric-agent:latest        # overridden in production by docker pull
     build:
       context: .
       dockerfile: Dockerfile
