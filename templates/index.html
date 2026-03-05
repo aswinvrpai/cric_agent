@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CricClubs AI Agent 🏏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🏏</span>
+        <span class="logo-text">CRICCLUBS <em>AI</em></span>
+      </div>
+      <div class="header-meta">
+        <span class="league-badge">JCL Division 1</span>
+        <button class="btn-reset" onclick="resetSession()" title="Reset session">↺ Reset</button>
+      </div>
+    </div>
+    <div class="pitch-line"></div>
+  </header>
+
+  <main class="layout">
+
+    <!-- LEFT PANEL: Controls -->
+    <aside class="panel panel-controls">
+      <h2 class="panel-title">Select Mode</h2>
+
+      <!-- Tab switcher -->
+      <div class="tab-switcher">
+        <button class="tab active" data-tab="scorecard" onclick="switchTab('scorecard', this)">Match</button>
+        <button class="tab" data-tab="league" onclick="switchTab('league', this)">League</button>
+        <button class="tab" data-tab="multi" onclick="switchTab('multi', this)">Compare</button>
+      </div>
+
+      <!-- Scorecard mode -->
+      <div class="tab-content active" id="tab-scorecard">
+        <p class="tab-desc">Generate a full AI match report from a single scorecard.</p>
+        <label class="field-label">Match ID</label>
+        <input class="field-input" type="text" id="match-id-input" placeholder="e.g. 6178" value="6178"/>
+        <button class="btn-primary" onclick="runScorecard()">
+          <span class="btn-icon">▶</span> Generate Report
+        </button>
+      </div>
+
+      <!-- League mode -->
+      <div class="tab-content" id="tab-league">
+        <p class="tab-desc">Scrape the full league — results, standings, batting & bowling tables.</p>
+        <button class="btn-primary" onclick="runLeague()">
+          <span class="btn-icon">▶</span> Load League Overview
+        </button>
+      </div>
+
+      <!-- Multi mode -->
+      <div class="tab-content" id="tab-multi">
+        <p class="tab-desc">Compare multiple matches side-by-side.</p>
+        <label class="field-label">Match IDs (comma separated)</label>
+        <input class="field-input" type="text" id="multi-ids-input" placeholder="e.g. 6178, 6088, 6050"/>
+        <button class="btn-primary" onclick="runMulti()">
+          <span class="btn-icon">▶</span> Compare Matches
+        </button>
+      </div>
+
+      <!-- Status indicator -->
+      <div class="status-box" id="status-box">
+        <div class="status-dot idle" id="status-dot"></div>
+        <span class="status-text" id="status-text">Ready</span>
+      </div>
+
+      <!-- Progress steps -->
+      <div class="steps" id="steps" style="display:none">
+        <div class="step" id="step-scrape">
+          <span class="step-icon">🌐</span>
+          <span class="step-label">Scraping CricClubs</span>
+          <span class="step-state" id="step-scrape-state">...</span>
+        </div>
+        <div class="step" id="step-ai">
+          <span class="step-icon">🤖</span>
+          <span class="step-label">AI Analysis</span>
+          <span class="step-state" id="step-ai-state">waiting</span>
+        </div>
+        <div class="step" id="step-done">
+          <span class="step-icon">✅</span>
+          <span class="step-label">Report Ready</span>
+          <span class="step-state" id="step-done-state">waiting</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL: Report output -->
+    <section class="panel panel-report">
+      <div class="report-header">
+        <h2 class="panel-title" id="report-title">Match Report</h2>
+        <button class="btn-copy" id="copy-btn" onclick="copyReport()" style="display:none">⎘ Copy</button>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">🏟️</div>
+        <p>Select a mode and run the agent to generate your AI cricket report.</p>
+        <p class="empty-hint">The agent will scrape CricClubs, analyse the data with Groq AI, and return a detailed match report.</p>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" id="loading-state" style="display:none">
+        <div class="spinner-wrap">
+          <div class="ball-spinner"></div>
+        </div>
+        <p class="loading-text" id="loading-text">Launching browser...</p>
+      </div>
+
+      <!-- Report content -->
+      <div class="report-content" id="report-content" style="display:none"></div>
+
+      <!-- Error state -->
+      <div class="error-state" id="error-state" style="display:none">
+        <div class="error-icon">⚠️</div>
+        <p class="error-msg" id="error-msg"></p>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Q&A Chat -->
+    <aside class="panel panel-chat">
+      <h2 class="panel-title">Ask the Analyst</h2>
+      <p class="chat-hint">Run a report first, then ask anything about the data.</p>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-bubble bot">
+          <span class="bubble-author">AI Analyst</span>
+          <span class="bubble-text">Hello! Load a match or league report and I'll answer your questions about the data. Try asking about top scorers, bowling figures, or fantasy picks!</span>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input
+          class="chat-input"
+          id="chat-input"
+          type="text"
+          placeholder="Who was the best bowler?"
+          onkeydown="if(event.key==='Enter') sendChat()"
+        />
+        <button class="btn-send" onclick="sendChat()">→</button>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

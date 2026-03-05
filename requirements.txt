@@ -1,0 +1,10 @@
+dataclasses
+python-dotenv
+fastapi
+groq
+from_root
+uvicorn[standard]
+jinja2
+python-multipart
+playwright
+beautifulsoup4
