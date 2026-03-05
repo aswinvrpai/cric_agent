@@ -210,3 +210,5 @@ __marimo__/
 artifacts/
 logs/
 *.log
+ec2-user@34.235.128.165
+cric-agent-key.pem
