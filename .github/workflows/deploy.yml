@@ -1,0 +1,68 @@
+name: Build & Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-northeast-1               # Tokyo — change if needed
+  ECR_REPOSITORY: cric-agent               # your ECR repo name
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ── 2. Configure AWS credentials ───────────────────────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      # ── 3. Login to Amazon ECR ─────────────────────────────────────────────
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── 4. Build & push Docker image to ECR ────────────────────────────────
+      - name: Build, tag, and push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                      $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      # ── 5. SSH into EC2 and redeploy ───────────────────────────────────────
+      - name: Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Login to ECR from the EC2 instance
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} \
+              | docker login --username AWS --password-stdin \
+                ${{ steps.login-ecr.outputs.registry }}
+
+            # Pull latest image
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+            # Restart with docker-compose
+            cd /home/ec2-user/cric-agent
+            docker-compose down
+            docker-compose up -d
+
+            # Clean up old images
+            docker image prune -f
